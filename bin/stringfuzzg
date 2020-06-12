@@ -536,6 +536,15 @@ def main():
         default = DEFAULT_LITERAL_PROBABILITY,
         help    = 'probability of creating literals instead of variables (default: {})'.format(DEFAULT_LITERAL_PROBABILITY)
     )
+    random_ast_parser.add_argument(
+        '--operators',
+        '-o',
+        dest    = 'operators',
+        metavar = 'OPS',
+        type    = str,
+        default = '',
+        help    = 'Operators allowed to be chosen for random non-terminal AST nodes. OPS is a comma-separated list of names of operators that are allowed. If this variable is empty, all operators will be allowed.'
+    )
 
     # parse args
     args = global_parser.parse_args()

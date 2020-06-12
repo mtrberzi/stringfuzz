@@ -34,6 +34,9 @@ NONTERMINALS = [
     InReNode,
     ReStarNode,
     RePlusNode,
+    ReConcatNode,
+    ReUnionNode,
+    ReInterNode
     # FromIntNode,
     # ToIntNode,
 ]
@@ -89,7 +92,7 @@ def should_choose_literal():
 def make_random_terminal(variables, sort):
     
     if sort == REGEX_SORT:
-        return ReAllCharNode()
+        return random.choice([ReAllCharNode(), StrToReNode(make_random_literal(STRING_SORT))])
 
     # randomly choose between a variable or a literal
     if should_choose_literal():
@@ -97,13 +100,12 @@ def make_random_terminal(variables, sort):
 
     return random.choice(variables[sort])
 
-def make_random_expression(variables, sort, depth, valid_override = False):
+def make_random_expression(variables, sort, depth, operators, valid_override = False):
     global _semantically_valid
 
     # if semantics are going to hell, then randomly reinvent the sort
     if _semantically_valid is False and valid_override is False:
         sort = random.choice(EXPRESSION_SORTS)
-
     # at depth 0, make a terminal
     if depth < 1:
         return make_random_terminal(variables, sort)
@@ -113,6 +115,11 @@ def make_random_expression(variables, sort, depth, valid_override = False):
 
     # get random expression generator
     candidate_nodes = get_all_returning_a(sort, NONTERMINALS)
+    if len(operators) > 0:
+        # filter by operators
+        candidate_nodes = [x for x in candidate_nodes if x._symbol in operators]
+        if len(candidate_nodes) == 0:
+            return make_random_terminal(variables, sort)
     expression_node = random.choice(candidate_nodes)
     signature       = expression_node.get_signature()
     num_args        = len(signature)
@@ -123,24 +130,26 @@ def make_random_expression(variables, sort, depth, valid_override = False):
         signature      = [collapsed_sort for i in range(num_args)]
 
     # generate random arguments
-    random_args = [make_random_expression(variables, arg_sort, shrunken_depth, valid_override) for arg_sort in signature]
+    random_args = [make_random_expression(variables, arg_sort, shrunken_depth, operators, valid_override) for arg_sort in signature]
 
     # build expression
     expression = expression_node(*random_args)
 
     return expression
 
-def generate_assert(variables, depth):
-    expression = make_random_expression(variables, BOOL_SORT, depth)
+def generate_assert(variables, depth, operators):
+    expression = make_random_expression(variables, BOOL_SORT, depth, operators)
     return AssertNode(expression)
 
-def make_random_ast(num_vars, num_asserts, depth, max_terms, max_str_lit_length, max_int_lit, literal_probability, semantically_valid):
+def make_random_ast(num_vars, num_asserts, depth, max_terms, max_str_lit_length, max_int_lit, literal_probability, semantically_valid, operators):
     global _max_terms
     global _max_str_lit_length
     global _max_int_lit
     global _literal_probability
     global _semantically_valid
 
+    operators_list = [x.strip() for x in operators.split(",")]
+    
     # set global config
     _max_terms           = max_terms
     _max_str_lit_length  = max_str_lit_length
@@ -158,7 +167,7 @@ def make_random_ast(num_vars, num_asserts, depth, max_terms, max_str_lit_length,
         declarations.extend(new_declarations)
 
     # create asserts
-    asserts = [generate_assert(variables, depth) for i in range(num_asserts)]
+    asserts = [generate_assert(variables, depth, operators_list) for i in range(num_asserts)]
 
     # add check-sat
     expressions = asserts + [CheckSatNode()]
