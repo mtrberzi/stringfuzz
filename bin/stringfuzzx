@@ -202,6 +202,15 @@ def main():
         choices  = OPERATORS,
         help     = 'operator to insert'
     )
+    bandit_parser.add_argument(
+        '--allowed-operators',
+        dest = 'allowed_operators',
+        required = False,
+        metavar = 'OPS',
+        type = str,
+        default = '',
+        help = 'Operators allowed to be chosen for random non-terminal AST nodes, in addition to the operator to insert. OPS is a comma-separated list of operators that are allowed. If this variable is empty, all operators are allowed.'
+    )
 
     # parse args
     args = global_parser.parse_args()

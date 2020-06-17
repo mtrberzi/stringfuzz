@@ -94,7 +94,7 @@ def find_node(op):
     return None
 
 
-def gen_pair(op_node, old_expr, variables, depth):
+def gen_pair(op_node, old_expr, variables, depth, allowed_operators):
     sig = op_node.get_signature()
     old_sig = old_expr.get_signature()
     args = []
@@ -110,12 +110,12 @@ def gen_pair(op_node, old_expr, variables, depth):
                 found = True
                 break
         if not found:
-            args.append(make_random_expression(variables, s, depth, True))
+            args.append(make_random_expression(variables, s, depth, allowed_operators, True))
 
     return [old_expr, op_node(*args)]
 
 # public API
-def bandit(ast, op, depth):
+def bandit(ast, op, depth, allowed_operators):
 
     tmp = find_node(op)
     if tmp is None:
@@ -128,6 +128,6 @@ def bandit(ast, op, depth):
         finder.walk()
         if not finder.exists:
             return ast
-    pair = gen_pair(op, finder.target, finder.variables, depth)
+    pair = gen_pair(op, finder.target, finder.variables, depth, allowed_operators)
     transformed = BanditTransformer(ast, pair).walk()
     return transformed
